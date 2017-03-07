@@ -1,0 +1,1 @@
+see: https://wiki.haskell.org/Simonpj/Talk:FunWithTypeFuns
