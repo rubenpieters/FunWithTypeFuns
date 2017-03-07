@@ -85,4 +85,39 @@ object p3_4_session_types_and_their_duality extends App {
   // Session[Server].run(add_server, neg_server)
   // add_server.runSess(neg_server)
   // neg_server.runSess(add_server)
+
+  implicit def sessionEither[A, B, AR, BR](implicit
+                                           sa: Session.Aux[A, AR]
+                                           , sb: Session.Aux[B, BR])
+  : Session.Aux[Either[A, B], (AR, BR)] =
+    new Session[Either[A, B]] {
+      type Dual = (AR, BR)
+      override def run(a: Either[A, B], dual: (AR, BR)) = a match {
+        case Left(y) => sa.run(y, dual._1)
+        case Right(y) => sb.run(y, dual._2)
+      }
+    }
+
+  implicit def sessionTuple[A, B, AR, BR](implicit
+                                          sa: Session.Aux[A, AR]
+                                          , sb: Session.Aux[B, BR])
+  : Session.Aux[(A, B), Either[AR, BR]] =
+    new Session[(A, B)] {
+      type Dual = Either[AR, BR]
+      override def run(a: (A, B), dual: Either[AR, BR]) = dual match {
+        case Left(y) => sa.run(a._1, y)
+        case Right(y) => sb.run(a._2, y)
+      }
+    }
+
+  val combined_server = (neg_server, add_server)
+
+  type NegClient = Out[Int, In[Int, Stop]]
+  type CombinedClient = Either[NegClient, Client]
+  val combined_client: CombinedClient = Right(add_client)
+
+  println("---")
+  combined_server.runSess(combined_client)
+  println("---")
+  combined_client.runSess(combined_server)
 }
